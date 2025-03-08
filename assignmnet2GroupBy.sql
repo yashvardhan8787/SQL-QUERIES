@@ -13,6 +13,13 @@ quantity int check(quantity >= 0),
 price Money check(price >= 0) ,
 region varchar(55))
 
+truncate table Sales
+
+Alter table Sales ADD Constraint fk_customerId FOREIGN KEY (customer_id) REFERENCES Customer(Id); 
+
+
+
+Create table Customer(Id int primary Key)
 Drop table Sales
 
 select * from Sales
@@ -24,6 +31,7 @@ insert into Sales values
 (4,105,1003,'2025-02-12',4,300,'rajkot'),
 (5,107,1005,'2025-02-12',9,350,'surat'),
 (6,109,1001,'2025-02-12',11,4000,'vadodara'),
+
 (7,111,1006,'2025-02-12',4,30,'anand'),
 (8,121,1004,'2025-02-12',5,3080,'surat'),
 (9,118,1006,'2025-02-12',3,2000,'anand'),

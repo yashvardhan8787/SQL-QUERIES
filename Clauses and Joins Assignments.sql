@@ -7,7 +7,7 @@
 
 
 
-select * from sys.tables where name like 'Person%'  or name like 'Production%' or  name like 'Sales%'
+select * frosys.tables where name like 'Person%'  or name like 'Production%' or  name like 'Sales%'
 
 
 

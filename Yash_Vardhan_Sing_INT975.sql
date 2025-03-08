@@ -12,6 +12,7 @@ ProjectID int
 )
 
 insert into Employee 
+
 values
 (101,'yash vardhan' , 'IT' , '2003-10-11','E-commerce' ,501),
 (102,'vraj soni' , 'ME' , '2004-01-01','Electric Engine' ,502),
@@ -76,3 +77,8 @@ select * from EmployeeDetails where Department='IT' and ProjectID > 500;
 select * from EmployeeDetails where EmployeeID >= 500;
 
 
+select * from Employees
+
+select name,modify_date ,create_date from sys.tables
+
+exec sp_help 'employees'

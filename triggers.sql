@@ -116,3 +116,13 @@ END
 
 CReate Table CheckTable(
 name varchar(55));
+
+
+Drop Trigger tr_PreventCreateTable
+
+Create table Orders (
+order_id int ,
+order_date Date 
+)
+
+Create TRIGGER tr_SetOrderDate 

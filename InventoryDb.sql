@@ -186,68 +186,179 @@ ON O.CUSTOMER_ID = C.CUSTOMER_ID
 
 /*
 🔹 Section C: Aggregate Functions, GROUP BY, HAVING – (10 Questions)
-Find the total number of orders.
+Find the total number of orders.*/
 
-Get the average purchase amount for each salesman.
+--Get the average purchase amount for each salesman.
 
-Find the maximum and minimum grade among all customers.
+select o.SALESMAN_ID , avg(PURCH_AMT) as [Average Pasrchase Amount] from salesman s join orders o on s.SALESMAN_ID = o.SALESMAN_ID group by o.SALESMAN_ID
 
-Count the number of customers in each city.
 
-Show the total purchase amount for each customer.
 
-List all cities having more than 1 customer.
+--Find the maximum and minimum grade among all customers.
 
-Retrieve total number of orders for each salesman.
+select min(GRADE) As [MIN Grade],max(GRADE) as[MAX Grade] from customer
 
-Find the average commission of salesmen in each city.
+--Count the number of customers in each city.
 
-Get the total sales value grouped by salesman city.
 
-List customers having more than one order and order them by total purchase amount.
+select CITY , count(*) from customer group by CITY
 
-🔹 Section D: Subqueries – (5 Questions)
-Find customers who have placed orders greater than the average order amount.
 
-Show salesmen who serve customers with grade above the average.
 
-Display the names of customers who have placed the maximum order.
+--Show the total purchase amount for each customer.
 
-List salesmen who are not handling any customers (use NOT IN or NOT EXISTS).
+select o.CUSTOMER_ID , SUM(PURCH_AMT) from orders o join customer c 
+on o.CUSTOMER_ID = c.CUSTOMER_ID 
+group By o.CUSTOMER_ID
 
-Get names of customers who placed orders on the latest order date.
 
-🔹 Section E: Data Manipulation Language (DML) – (5 Questions)
-Insert a new customer into the CUSTOMER table.
 
-Update commission of salesman with ID 10005 to 0.20.
+--List all cities having more than 1 customer.
 
-Delete all orders placed before '2024-11-05'.
+select CITY , count(*) as[count of customer] from customer group by CITY having COUNT(*) > 1
 
-Increase grade of all customers in 'Dallas' by 10.
 
-Change the city of customer 'Henry Young' to 'Houston'.
 
-🔹 Section F: Views – (3 Questions)
-Create a view named TopSalesmen showing all salesmen with commission above 0.15.
+--Retrieve total number of orders for each salesman.
+select o.SALESMAN_ID , count(*) as [Number of IDs] from  orders o join salesman s
+on o.SALESMAN_ID = s.SALESMAN_ID group by o.SALESMAN_ID
 
-Create a view CustomerOrders showing customer name, city, and their total order amount.
+--Find the average commission of salesmen in each city.
+select CITY , AVG(COMMISSION) AS [Average Commision] from salesman Group by CITY
 
-Create a view SalesmanPerformance that shows each salesman with the number of customers and total orders handled.
 
-🔹 Section G: Constraints and Data Definition – (3 Questions)
-Add a NOT NULL constraint to CITY column in the SALESMAN table.
 
-Alter the CUSTOMER table to add a column EMAIL of type VARCHAR(50).
+--Get the total sales value grouped by salesman city.
+select  s.CITY, Sum(o.PURCH_AMT) as [total SAles value ] from orders o join salesman s 
+on o.SALESMAN_ID =s.SALESMAN_ID group by s.CITY
 
-Drop the GRADE column from the CUSTOMER table.
 
-🔹 Section H: Set Operators – (2 Questions)
-List all cities from both SALESMAN and CUSTOMER tables (use UNION).
 
-Find all customer cities that are not salesman cities (use EXCEPT or NOT IN).
+--List customers having more than one order and order them by total purchase amount.
 
-🔹 Section I: Miscellaneous & Pattern Matching – (2 Questions)
-Find all customers whose names contain the letter 'e' in the second position.
+select o.CUSTOMER_ID , sum(o.PURCH_AMT) from orders o 
+join customer c on o.CUSTOMER_ID = c.CUSTOMER_ID
+group by o.CUSTOMER_ID having Count(*) > 1
+ORDER BY SUM(o.PURCH_AMT) DESC;
 
-Display all customers whose names end with 'n'.*/
+
+
+
+
+/*🔹 Section D: Subqueries – (5 Questions)*/
+--Find customers who have placed orders greater than the average order amount.
+
+select DISTINCT CUST_NAME from customer c , Orders o Where c.CUSTOMER_ID = o.CUSTOMER_ID and o.PURCH_AMT >(select AVG(PURCH_AMT) from orders)
+
+--Show salesmen who serve customers with grade above the average.
+
+select Name from salesman where SALESMAN_ID IN (
+select o.SALESMAN_ID from Orders o join customer c 
+on c.CUSTOMER_ID= o.CUSTOMER_ID where c.GRADE > (select AVG(GRADE) from customer))
+
+
+--Display the names of customers who have placed the maximum order.
+
+select CUST_NAME from customer Where CUSTOMER_ID IN (
+select CUSTOMER_ID from orders Group By CUSTOMER_ID Having COUNT(*) = ( 
+select MAX(ordr_count) from (select CUSTOMER_ID ,count(*) as [ordr_count] from orders Group By CUSTOMER_ID) as c))
+
+
+
+--List salesmen who are not handling any customers (use NOT IN or NOT EXISTS).
+
+select NAME from salesman WHERE SALESMAN_ID  NOT IN (select DISTINCT SALESMAN_ID  from Orders)
+
+select NAME from salesman s WHERE  NOT EXISTS ( select 1 from orders o where o.SALESMAN_ID = s.SALESMAN_ID )
+
+
+--Get names of customers who placed orders on the latest order date.
+
+select CUST_NAME from customer where CUSTOMER_ID IN (select CUSTOMER_ID From ORDERS where ORDR_DATE = (select MAX(ORDR_DATE) from orders) )
+
+
+/*🔹 Section E: Data Manipulation Language (DML) – (5 Questions)*/
+
+
+--Insert a new customer into the CUSTOMER table.
+select * from CUSTOMER
+
+INSERT INTO CUSTOMER(CUSTOMER_ID, CUST_NAME,CITY,GRADE,SALESMAN_ID) Values( 20011,'yash','Gujarat',350,10003)
+
+--Update commission of salesman with ID 10005 to 0.20.
+
+Update salesman set COMMISSION=0.20 where SALESMAN_ID=10005
+
+
+--Delete all orders placed before '2024-11-05'.
+
+Delete FROM ORDERS Where ORDR_DATE < '2024-11-05'
+
+--Increase grade of all customers in 'Dallas' by 10.
+UPDATE CUSTOMER set GRADE = GRADE+10 
+--Change the city of customer 'Henry Young' to 'Houston'.*
+
+Update customer set CITY ='GUJARAT' Where CUST_NAME='Henry Young'
+
+/*
+🔹 Section F: Views – (3 Questions)*/
+
+
+
+--Create a view named TopSalesmen showing all salesmen with commission above 0.15.
+
+CREATE VIEW TopSalesmen As select * from salesman where COMMISSION > 0.15
+
+select * from TopSalesmen
+
+--Create a view CustomerOrders showing customer name, city, and their total order amount.
+
+Create View CustomerOrders as (Select c.CUST_NAME ,CITY ,SUM(PURCH_AMT) as [Total Order Amount] from orders o join customer c on o.CUSTOMER_ID=c.CUSTOMER_ID GRoup by c.CUST_NAME,c.CITY)
+
+select * from CustomerOrders
+
+--Create a view SalesmanPerformance that shows each salesman with the number of customers and total orders handled.
+
+Create view SalesmanPerformance as 
+SELECT NAME , p.* From salesman s Join 
+(select SALESMAN_ID , count(Distinct CUSTOMER_ID ) as [totalCustomer] , count(*) as [Total Orders] from Orders  Group by SALESMAN_ID) as p
+on p.SALESMAN_ID = s.SALESMAN_ID 
+
+
+select * from SalesmanPerformance
+
+/*
+🔹 Section G: Constraints and Data Definition – (3 Questions)*/
+
+
+--Add a NOT NULL constraint to CITY column in the SALESMAN table.
+Alter table salesman Alter column CITY VARCHAR(50) NOT null
+
+
+--Alter the CUSTOMER table to add a column EMAIL of type VARCHAR(50).
+ALter table customer Add  EMAIL varchar(50)
+
+--Drop the GRADE column from the CUSTOMER table.
+Alter Table customer DROP column EMAIL
+
+/*🔹 Section H: Set Operators – (2 Questions)*/
+
+
+
+--List all cities from both SALESMAN and CUSTOMER tables (use UNION).
+
+select CITY from SALESMAN 
+UNION 
+SELECT CITY FROM  CUSTOMER 
+
+--Find all customer cities that are not salesman cities (use EXCEPT or NOT IN).
+SELECT  CITY from customer EXCEPT select CITY FROM SALESMAN
+
+--🔹 Section I: Miscellaneous & Pattern Matching – (2 Questions)
+--Find all customers whose names contain the letter 'e' in the second position.
+
+select * from CUSTOMER where CUST_NAME LIKE '_e%'
+
+--Display all customers whose names end with 'n'.*/
+
+select * from CUSTOMER where CUST_NAME LIKE '%n'

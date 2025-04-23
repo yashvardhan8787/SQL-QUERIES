@@ -362,3 +362,154 @@ select * from CUSTOMER where CUST_NAME LIKE '_e%'
 --Display all customers whose names end with 'n'.*/
 
 select * from CUSTOMER where CUST_NAME LIKE '%n'
+
+
+
+/*Create a trigger to prevent inserting an order with a purchase amount less than 100.
+
+Write a trigger that automatically updates a customer's grade to 500 if they place an order above 5000.
+
+Create a trigger that logs deleted salesmen's information into a backup table before deletion.
+
+Write a trigger that prevents deleting a salesman if they are currently assigned to any customer.
+
+Create a trigger to audit all updates on the ORDERS table by recording the old and new purchase amount along with a timestamp.*/
+
+
+
+
+--⚙️ STORED PROCEDURES:
+
+--Write a stored procedure to retrieve all orders placed by a specific customer using their CUSTOMER_ID as input.
+
+Create Proc getCustomersOrders 
+@c_Id INT 
+As 
+Begin 
+select * from Orders where CUSTOMER_ID = @c_Id ;
+end;
+
+exec getCustomersOrders 10002
+
+--Create a procedure to assign a salesman to a customer based on their city match.
+
+Create proc spAssignSalesmanToCustomer
+@cust_id int ,
+@cust_city Varchar(50)
+As 
+Begin
+Declare @s_id int 
+select top 1 @s_id=SALESMAN_ID  from salesman where city = @cust_city ;
+Update customer set SALESMAN_ID = @s_id where CUSTOMER_ID = @cust_id;
+end;
+
+exec spAssignSalesmanToCustomer 10002 , 'Gujarat'
+
+
+--Write a procedure to increase the commission of all salesmen by 5% whose commission is currently less than 0.10.
+
+Create proc spIncreaseCommissionBy5
+As 
+Begin
+Update salesman set COMMISSION= COMMISSION + (COMMISSION * 0.0010)  Where COMMISSION <= 0.10
+End;
+ 
+--Write a stored procedure that returns the total purchase amount of all orders for a given salesman.
+
+Create Proc spAllPurchaseAmt
+@c_id int ,
+@Result DECIMAL(10,2) output
+As 
+Begin 
+Declare @totalAmt DECIMAL(10,2)
+select @totalAmt=SUM(PURCH_AMT) from orders where CUSTOMER_ID = @c_id ;
+set @Result = ISNULL(@totalAmt ,0)
+End;
+
+
+Declare @res DECIMAL(10,2)
+exec spAllPurchaseAmt 1002 , @res OUTPUT 
+
+ 
+
+--Write a stored procedure that returns the list of customers who haven't placed any orders.
+Create proc spGetCustomerWithoutOrder 
+as
+Begin 
+select * from customer where CUSTOMER_ID  in ( 
+select CUSTOMER_ID FROM customer
+Except 
+select CUSTOMER_ID from orders )
+End;
+
+
+Create proc spGetCustomerWithoutOrder 
+as
+Begin 
+select * from customer c where Not exists (Select 1 from orders where o.CUSTOMER_ID  = c.CUSTOMER_ID) 
+End;
+
+
+--Create a stored procedure that deletes orders older than a specified date.
+
+Create proc spDelectOrdersBefore 
+@beforeDate Date 
+As 
+Begin
+ Delete from Orders Where ORDR_Date < @beforeDate ;
+End 
+
+
+
+
+
+--Create a procedure to return the top N salesmen based on the total purchase amount of their handled orders.
+
+CREATE PROC spGetTopNSalesmen 
+    @N INT
+AS
+BEGIN
+    SELECT TOP (@N)
+        S.SALESMAN_ID,
+        S.NAME AS SALESMAN_NAME,
+        SUM(O.PURCH_AMT) AS TOTAL_SALES
+    FROM SALESMAN S
+    JOIN ORDERS O ON S.SALESMAN_ID = O.SALESMAN_ID
+    GROUP BY S.SALESMAN_ID, S.NAME
+    ORDER BY TOTAL_SALES DESC;
+END;
+
+--Write a stored procedure that accepts a city name and returns all customers and salesmen in that city.
+
+    SELECT 
+        'Customer' AS PersonType,
+        C.CUSTOMER_ID,
+        C.CUST_NAME,
+        C.CITY,
+        C.SALESMAN_ID
+    FROM CUSTOMER C
+    WHERE C.CITY = 'Chicago'
+
+    UNION ALL
+
+    -- Salesmen from the specified city
+    SELECT 
+        'Salesman' AS PersonType,
+        S.SALESMAN_ID AS CUSTOMER_ID, -- Just to keep the same column structure
+        S.NAME AS CUST_NAME,
+        S.CITY,
+        NULL AS SALESMAN_ID
+    FROM SALESMAN S
+    WHERE S.CITY = 'Chicago'
+
+
+
+--Create a stored procedure to change the grade of a customer by passing customer ID and new grade.*y8/
+
+Create Proc spChangeCustomerGrade
+@newGrade int ,
+@id int
+As 
+Begin
+update customer set GRADE=@newGrade where CUSTOMER_ID = @id
+end;

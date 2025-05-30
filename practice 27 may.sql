@@ -33,6 +33,18 @@ CREATE TABLE Emp (
     CONSTRAINT fk_emp FOREIGN KEY (dept_Id) REFERENCES Dep(dept_Id)
 );
 
+CREATE TABLE emplOGS (
+    emp_Id INT,
+    emp_Name VARCHAR(55) NOT NULL,
+    email VARCHAR(55),
+    salary DECIMAL(10, 2),
+    hire_Date DATE DEFAULT GETDATE(),
+    dept_Id INT,
+    CONSTRAINT pk_emplOG PRIMARY KEY (emp_Id),
+    CONSTRAINT uk_emplOG UNIQUE (email),
+    CONSTRAINT fk_emplOG FOREIGN KEY (dept_Id) REFERENCES Dep(dept_Id)
+);
+
 --3. Add a CHECK constraint to ensure that salary is greater than 5000.
 Alter Table Emp
 Add Constraint ck_emp Check (salary > 5000);
@@ -171,3 +183,108 @@ End;
 
 
 --27. Modify the stored procedure to include error handling using DECLARE … HANDLER.
+
+
+
+--28. Insert sample data into both Department and Employee tables.
+
+
+Insert into Dep values( 105 , 'FS'),( 102 , 'DA'),( 103 , 'DE'),( 104 , 'DS')
+select * from Dep
+
+Insert into Emp values(101, 'Yash','singhyash@gmail.com',55000.00,GETDATE(),101)
+Insert into Emp values(102, 'zash','singhzash@gmail.com',65000.00,GETDATE(),102)
+Insert into Emp values(103, 'aash','singhaash@gmail.com',45000.00,GETDATE(),103)
+Insert into Emp values(104, 'bash','singhbash@gmail.com',35000.00,GETDATE(),104)
+Insert into Emp values(105, 'cash','singhcash@gmail.com',75000.00,GETDATE(),101)
+Insert into Emp values(106, 'aash','singhdash@gmail.com',45000.00,GETDATE()-100,101)
+Insert into Emp values(107, 'bash','singheash@gmail.com',35000.00,GETDATE()-200,104)
+Insert into Emp(emp_Id ,
+    emp_Name, 
+    email ,
+    salary,
+    hire_Date,
+    dept_Id ) values(109, 'cash','singhsash@gmail.com',75000.00,GETDATE()-300,103)
+
+select * from Emp
+
+--29. Update salary by 10% for employees hired before 2025.
+
+Update Emp set salary= salary + (salary  * 0.10 ) Where year(hire_Date) < 2025
+
+--30. Delete all employees who have null emails.
+
+Delete from Emp where email= null;
+
+--31. Alter the Employee table to add a new column experience_years with a default value of 0.
+Alter table Emp add  experience Int Default 0 ;
+
+
+--32. Rename the experience_years column to years_of_experience.
+EXEC sp_rename 'Emp.experience_years', 'years_of_experience', 'COLUMN';
+
+
+--33. Create a BEFORE INSERT trigger to validate that salary is not below 10,000.
+
+CREATE TRIGGER tr_validateSalary
+ON Emp
+INSTEAD OF INSERT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM INSERTED WHERE salary < 10000)
+    BEGIN
+        PRINT 'SALARY CANNOT BE LESS THAN 10000';
+        ROLLBACK TRANSACTION;
+    END
+    ELSE
+    BEGIN
+        INSERT INTO Emp (emp_Id, emp_Name, email, salary, hire_Date, dept_Id)
+        SELECT emp_Id, emp_Name, email, salary, hire_Date, dept_Id
+        FROM INSERTED;
+    END
+END;
+
+--34. Create an AFTER DELETE trigger to insert deleted employee records into a backup table Employee_Logs.
+
+CREATE TRIGGER TR_AFTERDELETE
+ON Emp
+AFTER DELETE 
+AS 
+BEGIN
+  INSERT INTO emplOGS(emp_Id, emp_Name, email, salary, hire_Date, dept_Id) 
+  SELECT emp_Id, emp_Name, email, salary, hire_Date, dept_Id FROM DELETED
+END;
+
+/*35. Use a transaction block to:
+    - Insert a new department
+    - Insert multiple employees into that department
+    - Rollback if any step fails  */
+
+
+CREATE TRIGGER PREVENTINSERTDEP
+ON Dep
+INSTEAD OF INSERT
+AS 
+BEGIN
+  PRINT('NOT ALLOWED TO CREATE DEPEARTENET')
+  ROLLBACK TRANSACTION;
+END;
+
+CREATE TRIGGER PREVENTMULTIPLEINSERTINDEPARTMENT
+ON Emp
+AFTER INSERT
+AS 
+BEGIN
+    IF EXISTS (
+        SELECT dept_Id
+        FROM INSERTED
+        GROUP BY dept_Id
+        HAVING COUNT(*) > 1
+    )
+    BEGIN
+        RAISERROR('Not allowed to insert multiple entries in one department.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END
+END;
+
+

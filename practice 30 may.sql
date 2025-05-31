@@ -466,4 +466,174 @@ select * from Courses where course_id not in (
 )
 
 
+--19.	Create a view that lists student name, course name, department, and grade.
+
+create view studentDetailView as (
+select name ,course_name, department_name , grade from Students  s
+Join Enrollments e on s.student_id = e.student_id
+join Courses c on e.course_id = c.course_id
+join Departments d on d.department_id = s.department_id
+)
+
+select * from studentDetailView
+
+
+
+--20.	Create a view that shows the average grade for each course.
+
+
+Create View avgCourseGradeView
+as
+select a.course_id ,course_name , a.gradeAvg from courses c join (
+select course_id , avg(grade) as gradeAvg from Enrollments group by course_id ) as a
+on a.course_id = c.course_id
+
+
+select * from avgCourseGradeView
+
+
+--21.	Create a view for each professor listing the courses they teach and number of enrolled students.
+create view professorDetail
+as 
+Select name , course_name , enrolledStudents  from Professors p 
+join Courses c on c.professor_id = p.professor_id
+join ( select course_id , count(*) as enrolledStudents from Enrollments group by course_id ) as e
+on e.course_id = c.course_id
+
+select * from professorDetail
+
+
+--22.	Create a view that lists departments and the number of professors and students in each.
+
+Create view deptDetailView as 
+select department_name , No_of_proff , No_of_Stu from Departments d 
+join (select department_id , count(*) as No_of_proff from Professors group by department_id) as p
+on p.department_id = d.department_id
+join (select department_id , count(*) as No_of_Stu from Students group by department_id) as s
+on s.department_id = d.department_id
+
+
+select * from deptDetailView
+
+
+--23.	Create a view showing students who have enrolled in at least one course and their average grade.
+
+create view studentAvg as
+select name , average  from Students s join 
+(select student_id , Avg(grade) as average from Enrollments group by student_id ) as a
+on s.student_id = a.student_id
+
+
+select * from studentAvg 
+
+
+--24.	Create a view that lists all courses with total credits offered by each department.
+Create View courseView
+as 
+select course_name , d.department_name ,c.credits from Courses c 
+join Departments d  on c.department_id  = d.department_id 
+
+select * from courseView
+
+--25.	Create a procedure to get all courses and grades for a given student name.
+
+create proc getCourseAndGrade 
+@st_name varchar(55)
+As 
+Begin
+
+  if(Exists(select 1 from Students where name= @st_name ))
+  Begin
+	  Declare @id int 
+	  select @id = student_id from Students  where name = @st_name;
+
+	  select course_name , grade from Courses  c 
+	  join Enrollments e  on 
+	  e.course_id = c.course_id where e.student_id= @id;
+  End
+  Else
+  Begin
+    print('Student not exists');
+  End
+End; 
+
+
+
+--26.	Write a procedure that returns a list of students who failed (grade < 40) any course.
+
+create proc getFailedStudent
+as 
+Begin
+ 
+ select Distinct name from Students s
+ join Enrollments e on s.student_id = e.student_id
+ where e.grade < 40;
+
+
+end 
+
+--27.	Create a stored procedure that inserts a new course and assigns it to a professor.
+
+create proc createNewCourse
+    @course_id INT,
+    @course_name VARCHAR(100),
+    @credits INT,
+    @department_id INT,
+    @professor_id INT
+As
+Begin
+  insert into Courses( course_id,course_name ,credits , department_id,professor_id) values( @course_id,@course_name ,@credits , @department_id,@professor_id);
+End
+
+
+
+
+
+
+--28.	Create a procedure that updates a student's grade for a given course.
+create proc updateGrade 
+@s_id int ,
+@c_id int ,
+@new_grade int 
+As 
+Begin
+  Update Enrollments set grade =@new_grade where student_id = @s_id and course_id =@c_id ;
+
+End 
+
+--29.	Write a procedure to list students who haven’t enrolled in any course for more than 3 months.
+create proc getUnenrolledStudent
+As 
+Begin
+select name from Students where student_id not in (
+select student_id from Enrollments
+)
+end ; 
+
+--30.	Write a procedure to transfer a professor to a different department and update all relevant course associations.
+
+create proc updateProffDept
+@proff_id int ,
+@newDept_id int 
+as 
+Begin
+
+Update Professors set department_id = @newDept_id where professor_id = @proff_id ;
+Update Courses set department_id = @newDept_id where professor_id =@proff_id ;
+
+End
+
+
+--31.	Create an index to optimize lookups on course name.
+
+create index idxcoursename on Courses(course_name) 
+
+
+--32.	Add an index on enrollment_date for faster time-based queries.
+
+create index idexenrollmentdate on Enrollments(enrollment_date)
+
+--33.	Create a composite index on (department_id, course_id) in the Courses table to optimize department-wise course reports.
+
+create index idxcompositecourse on Courses(department_id, course_id)
 
